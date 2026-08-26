@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Sobre o projeto — Viva{% endblock %}
+
+{% block content %}
+<section class="page-section">
+  <div class="page-section-inner narrow">
+    <h1 class="page-title">Sobre o projeto</h1>
+    <p class="page-lead">
+      O Viva nasceu como projeto de extensão universitária com um objetivo simples: usar
+      tecnologia para chegar mais perto de quem está sofrendo, sem nunca substituir o
+      cuidado humano — só apoiando para que ele chegue mais rápido e com mais qualidade.
+    </p>
+
+    <h2>Como funciona</h2>
+    <p>
+      A pessoa conversa livremente com uma IA de primeira escuta. Enquanto a conversa
+      acontece, um motor de triagem acompanha o que está sendo dito, em duas camadas:
+    </p>
+    <ul class="page-list">
+      <li><strong>Gatilho imediato</strong> — frases de risco iminente (plano, método, prazo, despedida) escalonam a conversa na hora.</li>
+      <li><strong>Pontuação cumulativa</strong> — sinais mais sutis (tristeza, isolamento, desesperança) vão somando ao longo da conversa; ao atingir um limiar, também escalona.</li>
+    </ul>
+    <p>
+      Em qualquer um dos dois casos, a decisão final nunca é automática: um alerta chega a
+      um <strong>psicólogo de plantão</strong>, que decide se assume a conversa diretamente ou
+      resolve de outra forma. Nenhuma ação externa (como contato com autoridades) acontece
+      sem essa confirmação humana.
+    </p>
+
+    <h2>Em que fase estamos</h2>
+    <p>
+      Este protótipo corresponde à <strong>Fase 1</strong> da proposta aprovada: uma simulação
+      interna completa do fluxo de triagem, usada para demonstração acadêmica e testes da
+      equipe — <strong>sem contato real com autoridades e sem uso real de localização</strong>.
+      Fases futuras, que envolvem parcerias formais e aprovação de um Comitê de Ética em
+      Pesquisa (CEP), tratam da evolução para um serviço com atendimento real.
+    </p>
+
+    <h2>Compromissos éticos</h2>
+    <ul class="page-list">
+      <li>O CVV (188) e o SAMU (192) estão sempre visíveis, independentemente do que a IA avalia.</li>
+      <li>Uma pessoa humana com formação em psicologia sempre confirma qualquer escalonamento sério.</li>
+      <li>A lista de sinais de risco é revisada e validada por profissionais antes de qualquer uso com pessoas reais.</li>
+      <li>Dados de conversas são tratados com cuidado, seguindo os princípios da LGPD.</li>
+    </ul>
+
+    <p class="page-note">
+      Projeto desenvolvido como atividade de extensão universitária.
+    </p>
+  </div>
+</section>
+{% endblock %}
