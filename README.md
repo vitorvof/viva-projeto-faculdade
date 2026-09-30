@@ -1,4 +1,4 @@
-# Viva — Sistema de Apoio e Triagem em Prevenção ao Suicídio Assistido por IA
+# Healix — Sistema de Apoio e Triagem em Prevenção ao Suicídio Assistido por IA
 ### Protótipo — Fase 1 (simulação interna)
 
 Este é o protótipo do projeto de extensão universitária, correspondente à
@@ -104,7 +104,7 @@ uma variável de ambiente em vez de um arquivo, ver passo 4.)
 ### 2. Sobe o código pro GitHub (via GitHub Desktop, sem usar terminal)
 
 1. Abre o GitHub Desktop → **File → New Repository**. Escolhe a pasta `app`
-   deste projeto (ou a pasta `viva-app` inteira) como local do repositório.
+   deste projeto (ou a pasta `healix-app` inteira) como local do repositório.
 2. Clica em **Publish repository**. Pode deixar como privado.
 3. Confirma que os arquivos `gemini_key.txt`, `anthropic_key.txt` e
    `painel_password.txt` **não aparecem** na lista de arquivos a enviar — se

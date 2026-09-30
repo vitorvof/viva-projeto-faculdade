@@ -40,8 +40,17 @@
 
   // ---------------- Lista de alertas ----------------
 
+  function handleAuthExpired(res) {
+    if (res.status === 401) {
+      window.location.href = "/login";
+      return true;
+    }
+    return false;
+  }
+
   async function fetchAlerts() {
     const res = await fetch(`/api/alerts?status=${currentFilter}`);
+    if (handleAuthExpired(res)) return;
     const alerts = await res.json();
     renderList(alerts);
   }
@@ -55,10 +64,16 @@
     alerts.forEach((a) => {
       const card = document.createElement("div");
       card.className = `alert-card ${a.reason} ${a.status === "resolvido" ? "resolvido" : ""} ${a.id === selectedAlertId ? "selected" : ""}`;
+      const quemLinha = a.status === "em_atendimento" && a.assumido_por_nome
+        ? `<div class="meta">Em atendimento com: ${escapeHtml(a.assumido_por_nome)}</div>`
+        : a.status === "resolvido" && a.resolvido_por_nome
+        ? `<div class="meta">Resolvido por: ${escapeHtml(a.resolvido_por_nome)}</div>`
+        : "";
       card.innerHTML = `
         <div class="reason">${REASON_ICON[a.reason] || "⚪"} ${a.reason_label}</div>
         <div class="meta">Sessão ${a.session_id.slice(0, 8)} · pontuação atual: ${a.session_score}</div>
         <div class="meta">${formatTime(a.created_at)}</div>
+        ${quemLinha}
         <span class="status-tag ${a.status}">${statusLabel(a.status)}</span>
       `;
       card.addEventListener("click", () => selectAlert(a.id));
@@ -96,6 +111,7 @@
   async function fetchAlertDetail(id) {
     try {
       const res = await fetch(`/api/alerts/${id}`);
+      if (handleAuthExpired(res)) return null;
       if (!res.ok) return null;
       return await res.json();
     } catch (e) {
@@ -157,9 +173,11 @@
       ${isResolved ? `
         <div class="resolution-box">
           <strong>Resolvido como:</strong> ${RESOLUTION_LABEL[alert.resolution] || alert.resolution}
+          ${alert.resolvido_por_nome ? `<div class="meta" style="margin-top:4px;">Resolvido por: ${escapeHtml(alert.resolvido_por_nome)}</div>` : ""}
           ${alert.note ? `<div class="meta" style="margin-top:4px;">Observações: ${escapeHtml(alert.note)}</div>` : ""}
         </div>
       ` : ""}
+      ${isAssumed && alert.assumido_por_nome ? `<div class="meta" style="margin-bottom:8px;">Em atendimento com: ${escapeHtml(alert.assumido_por_nome)}</div>` : ""}
 
       <div class="transcript" id="transcript-box">${transcriptHtml || '<div class="empty-state">Sem mensagens.</div>'}</div>
 

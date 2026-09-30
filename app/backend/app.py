@@ -10,14 +10,16 @@ confirmando na tela de painel), conforme a proposta aprovada.
 
 import functools
 import os
+import secrets
 import sys
 import uuid
 from datetime import datetime, timezone
 
-from flask import Flask, Response, request, jsonify, render_template
+from flask import Flask, Response, request, jsonify, render_template, session, redirect, url_for
 
 import triage
 import ai_provider
+import auth
 from database import get_connection, init_db
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
@@ -29,46 +31,46 @@ EMERGENCY_NUMBERS = {"cvv": "188", "samu": "192"}
 
 
 # ---------------------------------------------------------------------------
-# Proteção por senha do painel do psicólogo de plantão.
+# Chave de assinatura da sessão de login (cookie assinado do Flask).
 #
-# Em uso puramente local (sem PAINEL_PASSWORD nem painel_password.txt
-# configurados) o painel continua acessível sem senha, pra não travar o
-# fluxo de testes de quem só está rodando na própria máquina. Mas assim que
-# este app for colocado no ar (Render, Railway, etc.), qualquer pessoa com o
-# link do painel veria as conversas de todo mundo — então é ESSENCIAL
-# configurar uma senha (variável de ambiente PAINEL_PASSWORD no serviço de
-# hospedagem, ou um arquivo painel_password.txt local) antes de compartilhar
-# o link publicamente. Ver README.md.
+# Defina a variável de ambiente SECRET_KEY no serviço de hospedagem para que
+# as sessões continuem válidas entre reinicializações do servidor. Sem ela,
+# uma chave aleatória é gerada a cada início do processo — o que é seguro,
+# mas obriga todo mundo a fazer login de novo sempre que o servidor reiniciar
+# (aceitável no protótipo, mas configure SECRET_KEY em produção).
 # ---------------------------------------------------------------------------
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+if not os.environ.get("SECRET_KEY"):
+    print(
+        "[app] AVISO: variável de ambiente SECRET_KEY não configurada — usando uma chave "
+        "temporária gerada neste processo. Todo mundo será deslogado a cada reinicialização "
+        "do servidor. Configure SECRET_KEY antes de divulgar o link do painel.",
+        file=sys.stderr,
+    )
 
-def _read_secret_file(filename):
-    path = os.path.join(os.path.dirname(__file__), filename)
-    if not os.path.isfile(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        value = f.read().strip()
-    return value or None
 
-
-def _painel_password():
-    return os.environ.get("PAINEL_PASSWORD") or _read_secret_file("painel_password.txt")
-
+# ---------------------------------------------------------------------------
+# Login individual da equipe de plantão (substitui a antiga senha única
+# compartilhada do painel — ver backend/auth.py para a lógica de
+# autenticação, hashing e bloqueio após tentativas inválidas).
+# ---------------------------------------------------------------------------
 
 def requires_painel_auth(view):
     @functools.wraps(view)
     def wrapped(*args, **kwargs):
-        password = _painel_password()
-        if not password:
-            return view(*args, **kwargs)
-        auth = request.authorization
-        if not auth or auth.password != password:
-            return Response(
-                "Acesso restrito ao painel do psicólogo de plantão.",
-                401,
-                {"WWW-Authenticate": 'Basic realm="Painel do Psicologo"'},
-            )
+        if not session.get("funcionario_id"):
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "login necessário"}), 401
+            return redirect(url_for("login", next=request.path))
         return view(*args, **kwargs)
     return wrapped
+
+
+def current_funcionario(conn):
+    funcionario_id = session.get("funcionario_id")
+    if not funcionario_id:
+        return None
+    return auth.get_funcionario(conn, funcionario_id)
 
 REASON_LABELS = {
     "gatilho_imediato": "Gatilho imediato (alerta máximo)",
@@ -133,10 +135,41 @@ def conversar():
     )
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        if session.get("funcionario_id"):
+            return redirect(url_for("painel"))
+        return render_template("login.html", erro=None)
+
+    email = (request.form.get("email") or "").strip()
+    senha = request.form.get("senha") or ""
+    conn = get_connection()
+    try:
+        funcionario, erro = auth.authenticate(conn, email, senha)
+    finally:
+        conn.close()
+
+    if erro:
+        return render_template("login.html", erro=erro, email=email), 401
+
+    session.clear()
+    session["funcionario_id"] = funcionario["id"]
+    session["funcionario_nome"] = funcionario["nome"]
+    destino = request.args.get("next") or url_for("painel")
+    return redirect(destino)
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/painel")
 @requires_painel_auth
 def painel():
-    return render_template("painel.html")
+    return render_template("painel.html", funcionario_nome=session.get("funcionario_nome"))
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -271,18 +304,18 @@ def api_alerts():
     status_filter = request.args.get("status", "aberto")
     conn = get_connection()
     try:
+        base_select = """SELECT alerts.*, sessions.score as session_score,
+                                 assumidor.nome as assumido_por_nome,
+                                 resolvedor.nome as resolvido_por_nome
+                          FROM alerts
+                          JOIN sessions ON alerts.session_id = sessions.id
+                          LEFT JOIN funcionarios assumidor ON alerts.assumido_por = assumidor.id
+                          LEFT JOIN funcionarios resolvedor ON alerts.resolvido_por = resolvedor.id"""
         if status_filter == "todos":
-            rows = conn.execute(
-                """SELECT alerts.*, sessions.score as session_score
-                   FROM alerts JOIN sessions ON alerts.session_id = sessions.id
-                   ORDER BY alerts.id DESC"""
-            ).fetchall()
+            rows = conn.execute(base_select + " ORDER BY alerts.id DESC").fetchall()
         else:
             rows = conn.execute(
-                """SELECT alerts.*, sessions.score as session_score
-                   FROM alerts JOIN sessions ON alerts.session_id = sessions.id
-                   WHERE alerts.status = ?
-                   ORDER BY alerts.id DESC""",
+                base_select + " WHERE alerts.status = ? ORDER BY alerts.id DESC",
                 (status_filter,),
             ).fetchall()
 
@@ -301,7 +334,14 @@ def api_alerts():
 def api_alert_detail(alert_id):
     conn = get_connection()
     try:
-        alert = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+        alert = conn.execute(
+            """SELECT alerts.*, assumidor.nome as assumido_por_nome, resolvedor.nome as resolvido_por_nome
+               FROM alerts
+               LEFT JOIN funcionarios assumidor ON alerts.assumido_por = assumidor.id
+               LEFT JOIN funcionarios resolvedor ON alerts.resolvido_por = resolvedor.id
+               WHERE alerts.id = ?""",
+            (alert_id,),
+        ).fetchone()
         if not alert:
             return jsonify({"error": "alerta não encontrado"}), 404
         messages = conn.execute(
@@ -330,12 +370,16 @@ def api_alert_assume(alert_id):
         if alert["status"] == "resolvido":
             return jsonify({"error": "este alerta já foi resolvido"}), 400
 
-        conn.execute("UPDATE alerts SET status = 'em_atendimento' WHERE id = ?", (alert_id,))
+        conn.execute(
+            "UPDATE alerts SET status = 'em_atendimento', assumido_por = ? WHERE id = ?",
+            (session.get("funcionario_id"), alert_id),
+        )
         conn.execute("UPDATE sessions SET status = 'em_atendimento' WHERE id = ?", (alert["session_id"],))
+        nome = session.get("funcionario_nome", "um psicólogo de plantão")
         conn.execute(
             """INSERT INTO messages (session_id, role, content, created_at, score_delta, matched_trigger)
-               VALUES (?, 'system', 'Um psicólogo de plantão entrou na conversa.', ?, 0, NULL)""",
-            (alert["session_id"], now_iso()),
+               VALUES (?, 'system', ?, ?, 0, NULL)""",
+            (alert["session_id"], f"{nome} entrou na conversa.", now_iso()),
         )
         conn.commit()
         return jsonify({"ok": True})
@@ -394,8 +438,8 @@ def api_alert_resolve(alert_id):
             return jsonify({"error": "alerta não encontrado"}), 404
 
         conn.execute(
-            "UPDATE alerts SET status = 'resolvido', resolution = ?, note = ?, resolved_at = ? WHERE id = ?",
-            (resolution, note, now_iso(), alert_id),
+            "UPDATE alerts SET status = 'resolvido', resolution = ?, note = ?, resolved_at = ?, resolvido_por = ? WHERE id = ?",
+            (resolution, note, now_iso(), session.get("funcionario_id"), alert_id),
         )
 
         # Ao encerrar o atendimento (qualquer resolução), a sessão volta a
@@ -444,15 +488,11 @@ def api_emergency_numbers():
 # importa `app` diretamente, sem passar pelo bloco abaixo.
 init_db()
 
-if not _painel_password():
-    print(
-        "[app] AVISO: o painel do psicólogo (/painel) está SEM SENHA. "
-        "Isso é normal rodando só localmente. Antes de colocar este app no "
-        "ar (Render, Railway, etc.), configure a variável de ambiente "
-        "PAINEL_PASSWORD ou crie um arquivo painel_password.txt em backend/ "
-        "— senão qualquer pessoa com o link poderia ver as conversas.",
-        file=sys.stderr,
-    )
+_seed_conn = get_connection()
+try:
+    auth.seed_funcionarios_if_empty(_seed_conn)
+finally:
+    _seed_conn.close()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5050)), debug=True)

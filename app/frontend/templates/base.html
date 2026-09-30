@@ -3,19 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Viva — Espaço de Apoio e Escuta{% endblock %}</title>
+  <title>{% block title %}Healix — Espaço de Apoio e Escuta{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='healix-icon.png') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
   <div class="site-header">
     <a href="/" class="brand">
       <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.8 4.6c-1.8-1.8-4.7-1.8-6.5 0L12 6.9 9.7 4.6c-1.8-1.8-4.7-1.8-6.5 0-1.8 1.8-1.8 4.7 0 6.5L12 20l8.8-8.9c1.8-1.8 1.8-4.7 0-6.5z"></path>
-        </svg>
+        <img src="{{ url_for('static', filename='healix-icon.png') }}" alt="Healix" />
       </div>
       <div>
-        <h1>Viva</h1>
+        <h1>Healix</h1>
         <div class="subtitle">Espaço de Apoio e Escuta — protótipo acadêmico</div>
       </div>
     </a>
@@ -39,12 +38,11 @@
           SAMU 192
         </a>
       </div>
+      <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
     </div>
   </div>
-
-  <button id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Abrir menu">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-  </button>
 
   <main>
     {% block content %}{% endblock %}
@@ -53,7 +51,7 @@
   <footer class="site-footer">
     <div class="site-footer-inner">
       <div class="footer-col">
-        <strong>Viva</strong> — protótipo de extensão universitária (Fase 1, simulação interna).
+        <strong>Healix</strong> — protótipo de extensão universitária (Fase 1, simulação interna).
         Não substitui atendimento profissional real.
       </div>
       <div class="footer-col footer-emergency">

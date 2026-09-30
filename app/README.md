@@ -1,4 +1,4 @@
-# Viva — Sistema de Apoio e Triagem em Prevenção ao Suicídio Assistido por IA
+# Healix — Sistema de Apoio e Triagem em Prevenção ao Suicídio Assistido por IA
 ### Protótipo — Fase 1 (simulação interna)
 
 Este é o protótipo do projeto de extensão universitária, correspondente à
@@ -12,8 +12,9 @@ Agora o protótipo é um site completo, não só uma tela de chat:
 - `/artigos` — "Importância da vida": o que ajuda no dia a dia, sinais de
   alerta, mitos e verdades
 - `/conversar` — o chat com a IA (era a página `/` antes)
-- `/painel` — painel do psicólogo de plantão (não aparece no menu público —
-  acesso só por quem tem o link)
+- `/painel` — painel da equipe de plantão (não aparece no menu público —
+  acesso só por quem tem o link, e exige **login individual**, ver abaixo)
+- `/login` — tela de login da equipe de plantão
 
 ## ⚠️ Antes de usar com qualquer pessoa real
 
@@ -39,8 +40,12 @@ internos da equipe e apresentação acadêmica.
 - **Camada 2 — Pontuação cumulativa**: sinais mais sutis (tristeza,
   isolamento, desesperança...) somam pontos; ao atingir o limiar, também
   escalona.
+- **Login individual da equipe de plantão** (`/login`) — cada psicólogo(a)
+  tem sua própria conta (e-mail + senha, com hash — nunca em texto puro).
+  Depois de 5 tentativas de senha inválidas, o acesso daquela conta fica
+  bloqueado por 15 minutos. Ver "Gerenciando a equipe de plantão" abaixo.
 - **Camada 3 — Confirmação humana**: nenhuma ação externa é automática. Um
-  alerta aparece no **painel do psicólogo de plantão** (`/painel`), que pode:
+  alerta aparece no **painel da equipe de plantão** (`/painel`), que pode:
   - **Assumir a conversa** — a partir daí, a IA para de responder e o
     psicólogo passa a conversar diretamente com o paciente em tempo real
     (o paciente recebe as mensagens automaticamente, via polling, sem
@@ -68,9 +73,24 @@ python3 app.py           # inicia o servidor em http://localhost:5050
 ```
 
 Abra `http://localhost:5050/` para ver o site (página inicial), e
-`http://localhost:5050/painel` em outra aba (painel do psicólogo de plantão) —
+`http://localhost:5050/painel` em outra aba (painel da equipe de plantão) —
 dá pra testar os dois lados ao mesmo tempo. O chat com a IA agora fica em
 `http://localhost:5050/conversar`.
+
+Na primeira vez que você roda o app localmente, se nenhuma conta existir
+ainda, uma conta de demonstração é criada automaticamente — o terminal
+mostra o e-mail e a senha dela (procure pelo aviso `[auth] AVISO:`). Use-a
+para entrar em `/login`, ou crie a sua com o utilitário abaixo.
+
+### Gerenciando a equipe de plantão (local)
+
+```bash
+cd backend
+python3 manage_funcionarios.py listar
+python3 manage_funcionarios.py adicionar "Vitor Franco" vitor@exemplo.com minhasenha123
+python3 manage_funcionarios.py resetar-senha vitor@exemplo.com outrasenha456
+python3 manage_funcionarios.py desativar vitor@exemplo.com   # bloqueia o acesso sem apagar a conta
+```
 
 ### Testes automatizados
 
@@ -88,27 +108,37 @@ para demonstração controlada** (professores, banca, um grupo pequeno e
 conhecido) — não anuncie o link publicamente nem use com pessoas reais em
 crise (ver aviso no topo deste arquivo).
 
-### 1. Protege o painel com senha (obrigatório antes de publicar)
+### 1. Prepare as contas da equipe de plantão (obrigatório antes de publicar)
 
-Sem isso, qualquer pessoa com o link do `/painel` veria as conversas de todo
-mundo. Dentro de `backend`, crie um arquivo `painel_password.txt` com uma
-senha (mesma ideia do `gemini_key.txt`):
+O acesso ao `/painel` agora exige login individual (e-mail + senha por
+funcionário), em vez de uma senha única compartilhada. **Nunca coloque
+e-mails e senhas reais da equipe no código** — este repositório é público.
+As contas são criadas a partir da variável de ambiente `FUNCIONARIOS_SEED`,
+configurada só no Render (passo 4), no formato:
 
-```bash
-echo "escolha_uma_senha_aqui" > painel_password.txt
+```
+Nome Completo:email:senha;Nome Completo 2:email2:senha2
 ```
 
-(Esse arquivo é só para teste local — no serviço de hospedagem você vai usar
-uma variável de ambiente em vez de um arquivo, ver passo 4.)
+Exemplo com a equipe do projeto (troque pelos e-mails e senhas reais na hora
+de configurar no Render — isto aqui é só ilustrativo):
+
+```
+Vitor Franco:vitor.franco@exemplo.com:senhaForte1;Vitor Bertok:vitor.bertok@exemplo.com:senhaForte2;Vitor Nunes:vitor.nunes@exemplo.com:senhaForte3;Thiago:thiago@exemplo.com:senhaForte4;Fabio:fabio@exemplo.com:senhaForte5
+```
+
+Se você esquecer de configurar essa variável, o app cria uma única conta de
+demonstração automaticamente (e avisa no log) — funciona para testar, mas
+substitua por contas reais antes de divulgar o link.
 
 ### 2. Sobe o código pro GitHub (via GitHub Desktop, sem usar terminal)
 
 1. Abre o GitHub Desktop → **File → New Repository**. Escolhe a pasta `app`
-   deste projeto (ou a pasta `viva-app` inteira) como local do repositório.
+   deste projeto (ou a pasta `healix-app` inteira) como local do repositório.
 2. Clica em **Publish repository**. Pode deixar como privado.
-3. Confirma que os arquivos `gemini_key.txt`, `anthropic_key.txt` e
-   `painel_password.txt` **não aparecem** na lista de arquivos a enviar — se
-   aparecerem, NÃO publique ainda; me avise antes.
+3. Confirma que os arquivos `gemini_key.txt`, `anthropic_key.txt` e `app.db`
+   **não aparecem** na lista de arquivos a enviar — se aparecerem, NÃO
+   publique ainda; me avise antes.
 
 ### 3. Cria o serviço no Render
 
@@ -128,7 +158,11 @@ Na aba **Environment** do serviço, adiciona:
 - `GEMINI_API_KEY` = sua chave do Google AI Studio (a mesma que vai no
   `gemini_key.txt` localmente — no Render, use a variável de ambiente em vez
   do arquivo)
-- `PAINEL_PASSWORD` = a senha que você escolheu no passo 1
+- `FUNCIONARIOS_SEED` = as contas reais da equipe de plantão, no formato do
+  passo 1
+- `SECRET_KEY` = qualquer texto longo e aleatório (ex.: gerado com
+  `python3 -c "import secrets; print(secrets.token_hex(32))"`) — mantém as
+  sessões de login válidas entre reinicializações do serviço
 
 Salva — o Render faz o deploy automaticamente. Depois de alguns minutos, o
 link aparece no topo da página do serviço.
@@ -137,27 +171,33 @@ link aparece no topo da página do serviço.
 
 - O serviço "dorme" depois de 15 minutos sem uso — a primeira pessoa a abrir
   o link depois disso espera uns 30-60 segundos pra ele acordar.
-- **O banco de dados (conversas e alertas) é apagado toda vez que o serviço
-  reinicia ou dorme e acorda de novo.** Para uma demonstração ao vivo (mostrar
-  o chat e, na sequência, o painel) isso não é problema — mas não dá pra
-  contar com o histórico continuar disponível se a demonstração for
-  interrompida por muito tempo.
+- **O banco de dados (conversas, alertas e também as contas da equipe) é
+  apagado toda vez que o serviço reinicia ou dorme e acorda de novo.** Para
+  uma demonstração ao vivo (mostrar o chat e, na sequência, o painel) isso
+  não é problema — as contas de `FUNCIONARIOS_SEED` são recriadas
+  automaticamente a cada reinicialização — mas não dá pra contar com o
+  histórico de atendimentos continuar disponível se a demonstração for
+  interrompida por muito tempo. A migração para um banco de dados persistente
+  (ex.: PostgreSQL) resolve isso e é o próximo passo do projeto (Fase 5).
 
 ## Estrutura do projeto
 
 ```
 app/
 ├── backend/
-│   ├── app.py            # servidor Flask, rotas da API
-│   ├── triage.py          # motor de triagem (Camadas 1 e 2)
-│   ├── ai_provider.py     # geração das respostas da IA (simulado ou real)
-│   ├── database.py        # esquema e conexão SQLite
-│   ├── test_triage.py      # testes automatizados do motor de triagem
-│   └── app.db              # banco de dados (criado ao rodar database.py)
+│   ├── app.py                   # servidor Flask, rotas da API
+│   ├── auth.py                  # login da equipe: hash de senha, seed, bloqueio
+│   ├── manage_funcionarios.py   # CLI para gerenciar contas localmente
+│   ├── triage.py                 # motor de triagem (Camadas 1 e 2)
+│   ├── ai_provider.py            # geração das respostas da IA (simulado ou real)
+│   ├── database.py               # esquema e conexão SQLite
+│   ├── test_triage.py             # testes automatizados do motor de triagem
+│   └── app.db                     # banco de dados (criado ao rodar database.py)
 ├── frontend/
 │   ├── templates/
 │   │   ├── chat.html       # tela do usuário
-│   │   └── painel.html     # painel do psicólogo de plantão
+│   │   ├── login.html      # login da equipe de plantão
+│   │   └── painel.html     # painel da equipe de plantão
 │   └── static/
 │       ├── style.css
 │       ├── chat.js
@@ -242,8 +282,15 @@ publicado em um repositório Git (adicione-os a um `.gitignore`).
   não há integração real com serviços de emergência nem captura de
   localização. Isso corresponde à Fase 4 da proposta, que exige parceria
   formal e aprovação de CEP antes de ser implementada.
-- Não há autenticação no painel do psicólogo — em uma versão além do
-  protótipo, isso precisa de login e controle de acesso.
+- O login da equipe já existe, mas ainda não há um cadastro visual (tela) de
+  novos funcionários — contas são criadas via `FUNCIONARIOS_SEED` (produção)
+  ou `manage_funcionarios.py` (local). Uma tela de administração de contas
+  fica para uma fase futura.
+- O banco de dados ainda é SQLite local, que não é persistente no plano
+  gratuito do Render (ver limitações acima) — a migração para um banco
+  persistente é o próximo passo (Fase 5).
+- O site (incluindo o chat, o login e o painel da equipe) já é responsivo em
+  celular e tablet — testado em telas de 375px de largura.
 - O motor de linguagem natural (sem API real) é baseado em regras simples,
   não em compreensão profunda de contexto — serve para demonstração da
   arquitetura, não para avaliação clínica de fato.
