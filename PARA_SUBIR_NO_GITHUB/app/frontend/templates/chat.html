@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Conversar — Healix{% endblock %}
+
+{% block header_extra %}
+  <div id="status-pill" class="status-pill normal">Conversa normal</div>
+  <button id="end-session-btn" class="ghost-btn" title="Encerrar esta conversa e começar uma nova">
+    Encerrar conversa
+  </button>
+{% endblock %}
+
+{% block content %}
+  <div class="chat-wrap">
+    <div id="messages" class="messages"></div>
+    <div class="composer">
+      <input id="input" type="text" placeholder="Digite sua mensagem..." autocomplete="off" />
+      <button id="send-btn" class="send-btn" title="Enviar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    Você está conversando com uma inteligência artificial, não com uma pessoa. Este é um protótipo acadêmico e não substitui atendimento profissional real.
+  </div>
+
+  <div id="end-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2>Encerrar esta conversa?</h2>
+      <p id="end-modal-text">Você poderá iniciar uma conversa nova a qualquer momento. O histórico desta conversa continua disponível para o psicólogo de plantão, se necessário.</p>
+      <div class="modal-actions">
+        <button id="end-modal-cancel" class="ghost-btn">Cancelar</button>
+        <button id="end-modal-confirm" class="danger-btn">Encerrar conversa</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="end-screen" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="brand-icon" style="margin: 0 auto 14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.8 4.6c-1.8-1.8-4.7-1.8-6.5 0L12 6.9 9.7 4.6c-1.8-1.8-4.7-1.8-6.5 0-1.8 1.8-1.8 4.7 0 6.5L12 20l8.8-8.9c1.8-1.8 1.8-4.7 0-6.5z"></path>
+        </svg>
+      </div>
+      <h2>Conversa encerrada</h2>
+      <p>Obrigado por compartilhar o que você estava sentindo. Lembre-se: CVV (188) e SAMU (192) estão disponíveis 24h, sempre que precisar.</p>
+      <div class="modal-actions" style="justify-content: center;">
+        <button id="new-conversation-btn" class="send-primary-btn">Iniciar nova conversa</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+{% endblock %}

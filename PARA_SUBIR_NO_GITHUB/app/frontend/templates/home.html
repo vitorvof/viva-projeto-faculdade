@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Healix — A vida importa{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-eyebrow">Prevenção ao suicídio · Fase 1 (protótipo acadêmico)</span>
+    <h1>A vida importa. Você não precisa passar por isso sozinho(a).</h1>
+    <p>
+      O Healix é um projeto de extensão universitária que une conversa acolhedora, triagem
+      inteligente e psicólogos de plantão para apoiar quem está passando por um momento
+      difícil — sempre com uma pessoa humana no controle das decisões mais importantes.
+    </p>
+    <div class="hero-actions">
+      <a href="/conversar" class="send-primary-btn hero-cta">Conversar agora</a>
+      <a href="/artigos" class="ghost-btn hero-cta-secondary">Ver o que pode ajudar</a>
+    </div>
+    <div class="hero-emergency">
+      Em risco imediato? Ligue agora: <a href="tel:188"><strong>CVV 188</strong></a> ou
+      <a href="tel:192"><strong>SAMU 192</strong></a> — gratuito, 24h.
+    </div>
+  </div>
+</section>
+
+<section class="pillars">
+  <div class="pillars-inner">
+    <div class="pillar-card">
+      <div class="pillar-icon">💬</div>
+      <h3>Escuta acolhedora</h3>
+      <p>Uma conversa real, sem julgamento, disponível a qualquer momento para você colocar o que está sentindo.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">🧭</div>
+      <h3>Triagem cuidadosa</h3>
+      <p>A conversa é acompanhada com atenção a sinais de risco, para saber a hora certa de pedir apoio extra.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">🤝</div>
+      <h3>Psicólogo humano de plantão</h3>
+      <p>Nenhuma decisão importante é automática — um profissional humano acompanha e assume a conversa quando necessário.</p>
+    </div>
+  </div>
+</section>
+
+<section class="home-note">
+  <div class="home-note-inner">
+    <p>
+      Este é um <strong>protótipo acadêmico (Fase 1)</strong>, usado para demonstração e testes internos
+      da equipe. Ainda não substitui atendimento profissional real nem aciona serviços de emergência
+      automaticamente. Saiba mais na página <a href="/sobre">Sobre o projeto</a>.
+    </p>
+  </div>
+</section>
+{% endblock %}

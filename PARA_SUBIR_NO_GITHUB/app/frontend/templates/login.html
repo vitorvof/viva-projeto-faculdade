@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login da Equipe — Healix</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--panel);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border);
+      padding: 32px 28px;
+    }
+    .login-card h1 {
+      font-size: 20px;
+      margin: 0 0 4px;
+      color: var(--text);
+    }
+    .login-card .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .login-field {
+      margin-bottom: 16px;
+    }
+    .login-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .login-error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .login-submit {
+      width: 100%;
+      border: none;
+      border-radius: 999px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      cursor: pointer;
+    }
+    .login-submit:hover { opacity: 0.94; }
+    .login-back {
+      display: block;
+      text-align: center;
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .login-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1>Login da Equipe de Plantão</h1>
+      <div class="subtitle">Acesso individual ao painel de atendimento do Sistema Healix.</div>
+
+      {% if erro %}
+        <div class="login-error">{{ erro }}</div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+        <div class="login-field">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" autocomplete="username" value="{{ email or '' }}" required autofocus />
+        </div>
+        <div class="login-field">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="login-submit">Entrar</button>
+      </form>
+
+      <a class="login-back" href="{{ url_for('home') }}">&larr; Voltar ao site</a>
+    </div>
+  </div>
+</body>
+</html>
