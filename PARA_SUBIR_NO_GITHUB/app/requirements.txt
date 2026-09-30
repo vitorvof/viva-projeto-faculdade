@@ -1,7 +1,0 @@
-Flask>=3.0
-requests>=2.31          # necessário para usar GEMINI_API_KEY (IA real, gratuita)
-gunicorn>=22.0          # servidor de produção — necessário para hospedar (ex.: Render)
-
-# Opcional — só é necessário se você configurar ANTHROPIC_API_KEY em vez de
-# GEMINI_API_KEY para usar uma IA conversacional real:
-# anthropic>=0.34
