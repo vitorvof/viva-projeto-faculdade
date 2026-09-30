@@ -918,6 +918,8 @@ textarea.note-input {
 .footer-col { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
 .footer-emergency { text-align: right; }
 .footer-emergency-numbers a { font-weight: 700; color: var(--danger); text-decoration: none; }
+.footer-team-link { margin-top: 4px; }
+.footer-team-link a { color: var(--muted); text-decoration: underline; }
 
 @media (max-width: 760px) {
   .site-nav { display: none; width: 100%; order: 3; }
